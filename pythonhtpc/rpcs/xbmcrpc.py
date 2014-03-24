@@ -11,6 +11,7 @@ import symmetricjsonrpc
 from pythonhtpc.core import RPCServer
 
 class XBMCRPC(RPCServer):
+    __validate = False
     class RPCClient(symmetricjsonrpc.RPCClient):
         class Request(symmetricjsonrpc.RPCClient.Request):
             def dispatch_notification(self, notification):
@@ -81,26 +82,36 @@ class XBMCRPC(RPCServer):
 
 
     def _execute_method(self, method, params, wait_for_response):
-        from validictory import validate
-        # Find config
-        config = self._method_config.get(method, None)
-        if not config:
-            self.logger.error("I don't have any configuration for method %s" % method)
-            return None
-        # Check parameters
+        if self.__validate:
+            from validictory import validate
+            # Find config
+            config = self._method_config.get(method, None)
+            if not config:
+                self.logger.error("I don't have any configuration for method %s" % method)
+                return None
+            # Check parameters
+            try:
+                self.logger.debug("Validating %s against %s" % (params, config['params']))
+                validate(params, config['params'])
+            except:
+                self.logger.exception("Error validating parameters:")
+                return None
         try:
-            validate(params, {'params': config['params']})
             result = self._rpc.request(method, wait_for_response=wait_for_response, params=params)
+            #if isinstance(result, dict):
+                #result = result[result.keys()[0]]
         except:
             self.logger.exception("Error sending request to XBMC:")
             return None
         # Check returns
-        try:
-            validate(result, {'params': config['returns']})
-            return result
-        except:
-            self.logger.exception("Error validating answer from XBMC:")
-            return None
+        if self.__validate:
+            try:
+                self.logger.debug("Validating %s against %s" % (result, config['returns']))
+                validate(result, config['returns'])
+            except:
+                self.logger.exception("Error validating answer from XBMC:")
+                return None
+        return result
 
     def notification_callback(self, notification, value):
         self.logger.debug("Received notification %s with value %s" % (notification, value))
@@ -112,8 +123,9 @@ class XBMCRPC(RPCServer):
             self.logger.exception("Problem processing notification %s with value %s:" % (notification, value))
 
     def _process_notification(self, notification, value):
-        from validictory import validate
-        validate(value, {'params': self._notification_config[notification]['params']})
+        if self.__validate:
+            from validictory import validate
+            validate(value, {'params': self._notification_config[notification]['params']})
         return value
 
 class XBMCCLI(XBMCRPC):
