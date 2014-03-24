@@ -111,7 +111,6 @@ class XBMCRPC(RPCServer):
         except:
             self.logger.exception("Problem processing notification %s with value %s:" % (notification, value))
 
-
     def _process_notification(self, notification, value):
         from validictory import validate
         validate(value, {'params': self._notification_config[notification]['params']})
@@ -209,8 +208,9 @@ if __name__ == '__main__':
     logging.getLogger('htpc').addHandler(stdout)
     # Now run
     with XBMCRPC("RaspiXBMC", "192.168.1.120") as xbmc:
-        print xbmc.execute_method('JSONRPC.Ping', True)
-        print xbmc.execute_method('JSONRPC.Version', True)
+        print xbmc.execute_method('JSONRPC.Ping')
+        print xbmc.execute_method('JSONRPC.Version')
+        # xbmc.execute_method("Addons.ExecuteAddon", params={'addonid': 'script.xbmc.subtitles'})
     # Or run until Ctrl+C
     #print xbmc.execute_method('JSONRPC.Ping', True)
     #print xbmc.execute_method('JSONRPC.Version', True)

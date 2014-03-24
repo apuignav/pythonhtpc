@@ -94,7 +94,9 @@ class RPCServer(HTPCObject):
         self.logger.critical("I don't know how to give you information yet")
         raise NotImplementedError("I don't know how to give you information yet")
 
-    def execute_method(self, method, wait_for_response=True, **params):
+    def execute_method(self, method, params=None, wait_for_response=True):
+        if params is None:
+            params = {}
         self.logger.debug("Executing method %s with parameters %s" % (method, params))
         if not method in self._methods:
             self.logger.error("Unknown method %s" % method)
