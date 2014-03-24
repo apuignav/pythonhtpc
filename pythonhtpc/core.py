@@ -38,8 +38,13 @@ class HTPCObject(object):
     def __exit__(self, ext_type, exc_value, traceback):
         self.stop()
 
-    def available_notifications(self):
-        return self._published_notifications
+    def available_notifications(self, pattern=None):
+        if pattern is None:
+            return self._published_notifications
+        else:
+            import re
+            regex = re.compile(pattern)
+            return [m.group(0) for m in [regex.match(notification) for notification in self._published_notifications] if m]
 
     def get_notification_info(self, notification):
         raise NotImplementedError("I don't know how to give you information")
@@ -87,8 +92,13 @@ class RPCServer(HTPCObject):
         # Perform cleanup here
         pass
 
-    def available_methods(self):
-        return self._methods
+    def available_methods(self, pattern=None):
+        if pattern is None:
+            return self._methods
+        else:
+            import re
+            regex = re.compile(pattern)
+            return [m.group(0) for m in [regex.match(method) for method in self._methods] if m]
 
     def get_method_info(self, method):
         self.logger.critical("I don't know how to give you information yet")
