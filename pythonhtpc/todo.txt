@@ -1,1 +1,0 @@
-# Create approppriate folder in /var/log
