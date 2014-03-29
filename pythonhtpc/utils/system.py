@@ -59,7 +59,9 @@ def run_command_with_pipe(cmd1, args1, cmd2, args2):
 def is_running(executable):
     """Determine if an executable is running.
 
-    It makes use of ps faxu | grep.
+    It makes use of ps axw and then regex matching. Therefore, be very careful:
+    if anything that is running matches executable, even if partially,
+    you will get a false positive.
 
     @arg  executable: name of the executable to check
     @type executable: str
@@ -67,6 +69,11 @@ def is_running(executable):
     @return: bool
 
     """
-    return (len(run_command_with_pipe('ps', 'faxu', 'grep', executable)) > 1)
+    import re
+    regex = re.compile(executable)
+    for line in run_command('ps', 'axw'):
+        if regex.search(line):
+            return True
+    return False
 
 # EOF
