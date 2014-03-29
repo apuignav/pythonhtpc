@@ -5,13 +5,13 @@
 # @date   02.03.2014
 # =============================================================================
 """JSON-RPC interaction with XBMC."""
+#https://github.com/gazpachoking/jsonref
 
 import symmetricjsonrpc
 
 from pythonhtpc.core import RPCServer
 
 class XBMCRPC(RPCServer):
-    __validate = False
     class RPCClient(symmetricjsonrpc.RPCClient):
         class Request(symmetricjsonrpc.RPCClient.Request):
             def dispatch_notification(self, notification):
@@ -52,6 +52,26 @@ class XBMCRPC(RPCServer):
 
     def _discover(self):
         """Discover methods and schema from the http jsonrpc."""
+        def process_schema(schema):
+            """See http://forum.xbmc.org/showthread.php?tid=190653 for details."""
+            processed_schema = {'methods': {}, 'notifications': {}}
+            for method, config in schema['methods'].items():
+                params = dict([(element.pop('name'), element) for element in config['params']])
+                processed_schema['methods'][method] = {'description': config['description'],
+                                                    'params': {'type': 'object', 'properties': params},
+                                                    'returns': config['returns'],
+                                                    }
+            # Hack for notifications
+            processed_schema['methods']['JSONRPC.Version']['returns'] = {'type': 'object',
+                                                                        'properties': {'version': {'properties': processed_schema['methods']['JSONRPC.Version']['returns']['properties']}}
+                                                                        }
+            processed_schema['notifications']['GUI.OnScreensaverActivated'] = processed_schema['notifications']['VideoLibrary.OnCleanStarted']
+            processed_schema['notifications']['GUI.OnScreensaverActivated']['description'] = "The screensaver has been activated."
+            processed_schema['notifications']['GUI.OnScreensaverDeactivated'] = processed_schema['notifications']['VideoLibrary.OnCleanStarted']
+            processed_schema['notifications']['GUI.OnScreensaverDeactivated']['description'] = "The screensaver has been deactivated."
+            # Ref resolving!
+            return processed_schema
+
         from json import loads
         import urllib2
         address, port, _ = self._address
@@ -63,12 +83,8 @@ class XBMCRPC(RPCServer):
             self.logger.exception("Error loading schema from http://%s:%s/jsonrpc" % (address, port))
             raise
         response.close()
-        # Hack for notifications
-        schema['notifications']['GUI.OnScreensaverActivated'] = schema['notifications']['VideoLibrary.OnCleanStarted']
-        schema['notifications']['GUI.OnScreensaverActivated']['description'] = "The screensaver has been activated."
-        schema['notifications']['GUI.OnScreensaverDeactivated'] = schema['notifications']['VideoLibrary.OnCleanStarted']
-        schema['notifications']['GUI.OnScreensaverDeactivated']['description'] = "The screensaver has been deactivated."
-        return schema
+        # Return processed schema
+        return process_schema(schema)
 
     def _init_rpc(self):
         import socket
@@ -82,20 +98,20 @@ class XBMCRPC(RPCServer):
 
 
     def _execute_method(self, method, params, wait_for_response):
-        if self.__validate:
-            from validictory import validate
-            # Find config
-            config = self._method_config.get(method, None)
-            if not config:
-                self.logger.error("I don't have any configuration for method %s" % method)
-                return None
-            # Check parameters
-            try:
-                self.logger.debug("Validating %s against %s" % (params, config['params']))
-                validate(params, config['params'])
-            except:
-                self.logger.exception("Error validating parameters:")
-                return None
+        from validictory import validate
+        # Find config
+        config = self._method_config.get(method, None)
+        if not config:
+            self.logger.error("I don't have any configuration for method %s" % method)
+            return None
+        # Check parameters
+        try:
+            pass
+            #self.logger.debug("Validating %s against %s" % (params, config['params']))
+            #validate(params, config['params'])
+        except:
+            self.logger.exception("Error validating parameters:")
+            return None
         try:
             result = self._rpc.request(method, wait_for_response=wait_for_response, params=params)
             #if isinstance(result, dict):
@@ -104,14 +120,13 @@ class XBMCRPC(RPCServer):
             self.logger.exception("Error sending request to XBMC:")
             return None
         # Check returns
-        if self.__validate:
-            try:
-                self.logger.debug("Validating %s against %s" % (result, config['returns']))
-                validate(result, config['returns'])
-            except:
-                self.logger.exception("Error validating answer from XBMC:")
-                return None
-        return result
+        try:
+            #self.logger.debug("Validating %s against %s" % (result, config['returns']))
+            validate(result, config['returns'])
+            return result
+        except:
+            self.logger.exception("Error validating answer from XBMC:")
+            return None
 
     def notification_callback(self, notification, value):
         self.logger.debug("Received notification %s with value %s" % (notification, value))
@@ -123,9 +138,8 @@ class XBMCRPC(RPCServer):
             self.logger.exception("Problem processing notification %s with value %s:" % (notification, value))
 
     def _process_notification(self, notification, value):
-        if self.__validate:
-            from validictory import validate
-            validate(value, {'params': self._notification_config[notification]['params']})
+        from validictory import validate
+        validate(value, {'params': self._notification_config[notification]['params']})
         return value
 
 class XBMCCLI(XBMCRPC):
