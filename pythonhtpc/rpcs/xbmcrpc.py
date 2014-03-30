@@ -54,7 +54,7 @@ class XBMCRPC(RPCServer):
         """Discover methods and schema from the http jsonrpc."""
         def process_schema(schema):
             """See http://forum.xbmc.org/showthread.php?tid=190653 for details."""
-            processed_schema = {'methods': {}, 'notifications': {}}
+            processed_schema = {'methods': {}, 'notifications': schema['notifications']}
             for method, config in schema['methods'].items():
                 params = dict([(element.pop('name'), element) for element in config['params']])
                 processed_schema['methods'][method] = {'description': config['description'],
@@ -242,5 +242,10 @@ if __name__ == '__main__':
     #print xbmc.execute_method('JSONRPC.Version', True)
     #xbmc.stop()
     #xbmc.wait()
+    import readline # optional, will allow Up/Down/History in the console
+    import code
+    shell = code.InteractiveConsole({'xbmc': xbmc})
+    with xbmc:
+        shell.interact()
 
 # EOF
