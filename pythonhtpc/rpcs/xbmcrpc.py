@@ -142,6 +142,27 @@ class XBMCRPC(RPCServer):
         validate(value, {'params': self._notification_config[notification]['params']})
         return value
 
+    def get_method_info(self, method_name, verbose=False):
+        if not method_name in self._methods:
+            self.logger.warning("Cannot give info for method %s because I don't know it" % method_name)
+        else:
+            method_info = self._method_config[method_name]
+            print 'Description:', method_info['description']
+            if verbose:
+                # Not nice yet
+                print 'Parameters:', method_info['params']
+                print 'Returns:', method_info['returns']
+
+    def get_notification_info(self, notification_name, verbose=False):
+        if not notification_name in self._published_notifications:
+            self.logger.warning("Cannot give info for notification %s because I don't know it" % notification_name)
+        else:
+            notification_info = self._notification_config[notification_name]
+            print 'Description:', notification_info['description']
+            if verbose:
+                # Not nice yet
+                print 'Parameters:', notification_info['params']
+
 if __name__ == '__main__':
     # Configure logging (ALWAYS needed!)
     import logging
