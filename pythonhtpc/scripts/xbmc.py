@@ -55,6 +55,7 @@ def decorate_xbmc(xbmc):
                 return method_caller
             for method in method_list:
                 setattr(self, method, wrapper(method))
+                getattr(self, method).__doc__ = self._parent._method_config['%s.%s' % (self._name, method)]['description']
 
     methods = {}
     for method in xbmc.get_available_methods():
