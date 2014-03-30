@@ -38,7 +38,7 @@ class HTPCObject(object):
     def __exit__(self, ext_type, exc_value, traceback):
         self.stop()
 
-    def available_notifications(self, pattern=None):
+    def get_available_notifications(self, pattern=None):
         if pattern is None:
             return self._published_notifications
         else:
@@ -92,7 +92,7 @@ class RPCServer(HTPCObject):
         # Perform cleanup here
         pass
 
-    def available_methods(self, pattern=None):
+    def get_available_methods(self, pattern=None):
         if pattern is None:
             return self._methods
         else:
