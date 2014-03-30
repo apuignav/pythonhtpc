@@ -78,7 +78,7 @@ def start_console(xbmc, _globals, _locals):
     readline.parse_and_bind("tab: complete")
     shell = code.InteractiveConsole(context)
     with xbmc:
-        shell.interact()
+        shell.interact('Welcome to XBMC CLI! Your XBMC is in variable xbmc')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
