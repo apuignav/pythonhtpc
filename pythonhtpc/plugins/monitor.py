@@ -41,4 +41,9 @@ class GPUTempMonitor(Monitor):
             # Regex didn't match
             return 0.0
 
+if __name__ == '__main__':
+    _fmt = "%30s = %.1f"
+    print _fmt % ("CPU Temp", CPUTempMonitor().monitor())
+    print _fmt % ("GPU Temp", GPUTempMonitor().monitor())
+
 # EOF
